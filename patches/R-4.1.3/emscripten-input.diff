@@ -79,11 +79,12 @@ Index: R-4.1.3/src/unix/sys-std.c
 +			initialised = 1;
 +		    }
 +		    const char* input = (const char*) EM_ASM_INT(return globalThis.Module.webr.readConsole());
-+
-+		    strncpy((char*) buf, input, len);
-+		    free((void*) input);
-+
-+		    return 1;
++		    if (input) {
++ 		        strncpy((char*) buf, input, len);
++		        free((void*) input);
++		        return 1;
++		    }
++		    return 0;
 +#else
  		    if(fgets((char *)buf, len, stdin) == NULL)
  			return 0;

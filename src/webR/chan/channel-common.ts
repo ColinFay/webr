@@ -1,5 +1,6 @@
 import { SharedBufferChannelMain, SharedBufferChannelWorker } from './channel-shared';
 import { ServiceWorkerChannelMain, ServiceWorkerChannelWorker } from './channel-service';
+import { PostMessageChannelMain, PostMessageChannelWorker } from './channel-postmessage';
 import { WebROptions } from '../webr-main';
 import { isCrossOrigin } from '../utils';
 
@@ -11,6 +12,7 @@ export const ChannelType = {
   Automatic: 0,
   SharedArrayBuffer: 1,
   ServiceWorker: 2,
+  PostMessage: 3,
 } as const;
 
 export type ChannelInitMessage = {
@@ -32,8 +34,14 @@ export function newChannelMain(data: Required<WebROptions>) {
       return new SharedBufferChannelMain(data);
     case ChannelType.ServiceWorker:
       return new ServiceWorkerChannelMain(data);
+    case ChannelType.PostMessage:
+      return new PostMessageChannelMain(data);
     case ChannelType.Automatic:
     default:
+      // @ts-expect-error WebAssembly.Suspender is not yet standardised
+      if (WebAssembly.Suspender !== 'undefined') {
+        return new PostMessageChannelMain(data);
+      }
       if (typeof SharedArrayBuffer !== 'undefined') {
         return new SharedBufferChannelMain(data);
       }
@@ -55,6 +63,8 @@ export function newChannelWorker(msg: ChannelInitMessage) {
       return new SharedBufferChannelWorker();
     case ChannelType.ServiceWorker:
       return new ServiceWorkerChannelWorker(msg.data);
+    case ChannelType.PostMessage:
+      return new PostMessageChannelWorker();
     default:
       throw new Error('Unknown worker channel type recieved');
   }

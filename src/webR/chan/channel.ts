@@ -19,10 +19,18 @@ import { WebRPayload, WebRPayloadWorker, webRPayloadError } from '../payload';
 //   main thread asynchronously reads from this queue, typically in an
 //   async infloop.
 //
-// - The worker synchronously reads from the input queue. Reading a
-//   message blocks until an input is available. Writing a message to
-//   the output queue is equivalent to calling `postMessage()` and
-//   returns immediately.
+// - The worker synchronously reads from the input queue, if supported by
+//   SharedArrayBuffer or synchronous XHR + service Worker. When supported,
+//   reading a message blocks until an input is available.
+//
+//   Writing a message to the output queue is equivalent to calling
+//   `postMessage()` and returns immediately.
+//
+//   If synchonrous reads are not possible, an alternative asynchonous
+//   REPL is used as a fallback, and messages are instead sent using async
+//   `postMessage()`. The fallback mode currently has some limitations: the
+//   user cannot interrupt long running computations, and nested REPLs do
+//   not work.
 //
 //   Note that the messages sent from main to worker need to be
 //   serialised. There is no structured cloning involved, and
@@ -102,6 +110,7 @@ export interface ChannelWorker {
   run(args: string[]): void;
   inputOrDispatch: () => number;
   setDispatchHandler: (dispatch: (msg: Message) => void) => void;
+  onMessageFromMainThread: (msg: Message) => void;
 }
 
 /**
