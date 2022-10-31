@@ -79,7 +79,15 @@ const webR = new WebR({
 
   readline.setCtrlCHandler(() => webR.interrupt());
 
-  await webR.evalRVoid('webr::global_prompt_install()', { withHandlers: false });
+  if (crossOriginIsolated) {
+    await webR.evalRVoid('webr::global_prompt_install(show_menu=TRUE)', {
+      withHandlers: false,
+    });
+  } else {
+    await webR.evalRVoid('webr::global_prompt_install(show_menu=FALSE)', {
+      withHandlers: false,
+    });
+  }
 
   // Clear the loading message
   term.write('\x1b[2K\r');
